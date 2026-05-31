@@ -1,9 +1,17 @@
 .env
+config.yaml
+config.local.yaml
 .state/
 *.log
 __pycache__/
 *.pyc
 .git/
+.venv/
+venv/
+env/
+*.egg-info/
 *.tar.gz
 damai_detail*.json
 damai_item.js
+tests/
+.pytest_cache/

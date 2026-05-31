@@ -4,11 +4,12 @@ Signal Watcher is moving toward a small, composable monitoring framework.
 
 ## Near Term
 
-- Add tests for RSS parsing, state updates, and notification formatting.
 - Add systemd service examples for long-running VPS deployments.
 - Add more notification providers.
 - Improve structured logging and failure visibility.
 - Document common deployment recipes.
+- Add more real-world config examples for stock and public status pages.
+- Add typed config validation with friendlier error messages.
 
 ## Monitor Ideas
 

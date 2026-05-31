@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "signal-watcher"
+version = "0.2.0"
+description = "Self-hosted signal monitoring toolkit for public web changes and notification workflows."
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{name = "HANG"}]
+dependencies = ["PyYAML>=6.0.1"]
+
+[project.scripts]
+signal-watcher = "signal_watcher.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

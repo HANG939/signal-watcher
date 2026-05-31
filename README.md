@@ -3,154 +3,157 @@
 [![CI](https://github.com/HANG939/signal-watcher/actions/workflows/ci.yml/badge.svg)](https://github.com/HANG939/signal-watcher/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Signal Watcher is a lightweight monitoring toolkit for VPS deployments.
+Signal Watcher is a self-hosted monitoring toolkit for public web signals and personal notification workflows.
 
-It currently includes:
+It is designed for low-cost VPS deployments where you want to monitor public changes and receive timely alerts through WeChat, Telegram, WeCom, generic webhooks, or stdout.
 
-- Twitter/X post monitoring through public RSS mirrors or the official X API
-- Damai project status monitoring for ticket availability signals
-- WeChat notifications through ServerChan, plus WeCom, Telegram, or generic webhook support
-- Cron and Docker deployment examples
+## What It Can Monitor
 
-The project is designed for personal reminders. It does not include credential scraping, captcha bypassing, or automatic paid order submission.
+- Public X/Twitter RSS feeds for new posts.
+- Damai public project status signals for ticket availability changes.
+- Generic webpage keyword changes, such as stock pages that stop showing `Unavailable`.
 
-## Use Cases
-
-- Follow public posts from a Twitter/X account and receive near-real-time notifications.
-- Watch a Damai project page for public status changes and ticket availability signals.
-- Run low-cost monitors on a VPS with cron, Docker, or a process supervisor.
-- Build custom signal monitors using the existing notification and state-file patterns.
-
-## How It Works
-
-### Twitter/X
-
-`src/x_watch.py` checks a target account and stores the latest seen post id in `.state/x-watch.json`.
-
-Default mode uses RSS mirrors, so it can run without paying for X API access. RSS mirrors may occasionally fail or lag, so the script tries multiple sources and rejects known block/placeholder feeds.
-
-Set `SOURCE_MODE=api` and `X_BEARER_TOKEN` if you want to use the official X API instead.
-
-### Damai
-
-`src/damai_watch.py` calls Damai H5 public detail APIs and stores the last seen project fingerprint in `.state/damai-watch.json`.
-
-Damai may hide exact ticket-grade inventory behind app-side flows and anti-bot checks. This watcher therefore focuses on public project status changes, buy button text, price range, and performance date signals. Treat notifications as a "go check now" reminder, not a guaranteed purchase signal.
+The project is a reminder system. It does not provide captcha bypassing, private-data scraping, platform rate-limit evasion, automatic checkout, or automatic payment.
 
 ## Quick Start
+
+Requires Python 3.9+.
 
 ```bash
 git clone https://github.com/HANG939/signal-watcher.git
 cd signal-watcher
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r requirements.txt
 cp .env.example .env
+cp examples/config.example.yaml config.yaml
 ```
 
-Edit `.env`:
+Edit `config.yaml` and enable the monitors you want. Put private notification tokens in `.env`.
 
-```bash
-SOURCE_MODE=rss
-X_USERNAME=example_user
-SERVERCHAN_SENDKEY=your_serverchan_sendkey
-DAMAI_ITEM_ID=replace_with_damai_item_id
-DAMAI_TARGET_TEXT=replace_with_target_ticket_tier
-DAMAI_TARGET_DATES=replace_with_target_dates
-```
-
-Run a single check:
+Run one check:
 
 ```bash
 set -a
 . ./.env
 set +a
+PYTHONPATH=src python -m signal_watcher --config config.yaml --once --dry-run
+```
+
+Run continuously:
+
+```bash
+set -a
+. ./.env
+set +a
+PYTHONPATH=src python -m signal_watcher --config config.yaml --watch
+```
+
+## Configuration Example
+
+```yaml
+state_file: .state/signal-watcher.json
+
+notifiers:
+  - type: serverchan
+    sendkey: ${SERVERCHAN_SENDKEY}
+
+monitors:
+  - name: alpha-cat-x
+    type: x_rss
+    enabled: true
+    username: Alpha_Cat
+    interval_seconds: 30
+
+  - name: dmit-stock
+    type: web_keyword
+    enabled: true
+    url: https://www.dmit.io/cart.php
+    title: "DMIT stock signal"
+    message: "The monitored product may be available. Open the page and check manually."
+    interval_seconds: 30
+    notify_on: match
+    absent_all:
+      - Unavailable
+```
+
+See [examples/config.example.yaml](examples/config.example.yaml) for X/Twitter, Damai, and generic stock examples.
+
+## Docker
+
+```bash
+cp .env.example .env
+cp examples/config.example.yaml config.yaml
+# Edit .env and config.yaml first.
+docker compose up -d --build
+```
+
+Logs:
+
+```bash
+docker compose logs -f
+```
+
+State is stored in `.state/` and ignored by git.
+
+## Legacy Scripts
+
+The original single-purpose scripts are still available:
+
+```bash
 python3 src/x_watch.py
 python3 src/damai_watch.py
 ```
 
-The first run initializes local state and usually does not send a notification. Later runs notify when a new tweet or Damai status change is detected.
-
-## VPS Cron Deployment
-
-Install the Twitter/X watcher at 30-second intervals:
+Cron helpers are also kept:
 
 ```bash
 bash scripts/install_x_cron.sh
-```
-
-Install the Damai watcher at 15-second intervals:
-
-```bash
 bash scripts/install_damai_cron.sh
 ```
 
-Logs are written to:
+For new installs, prefer the config-based `signal_watcher` CLI.
 
-- `x-watch.log`
-- `damai-watch.log`
+## Notification Providers
 
-Local state is written under `.state/`.
+Supported notifier types:
 
-## Docker Deployment
+- `print`
+- `serverchan`
+- `telegram`
+- `wecom`
+- `webhook`
 
-```bash
-docker compose up -d --build
-```
-
-Useful `.env` options:
-
-```bash
-ENABLE_X_WATCH=1
-ENABLE_DAMAI_WATCH=1
-X_INTERVAL_SECONDS=30
-DAMAI_INTERVAL_SECONDS=15
-```
-
-## Notification Options
-
-Use one of these:
-
-- `SERVERCHAN_SENDKEY`
-- `WECOM_WEBHOOK_URL`
-- `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`
-- `WEBHOOK_URL`
-
-ServerChan is the easiest route for personal WeChat notifications.
-
-## Configuration
-
-See `.env.example` for all supported environment variables.
-
-Important files:
-
-- `src/x_watch.py`: Twitter/X monitor
-- `src/damai_watch.py`: Damai monitor
-- `scripts/install_x_cron.sh`: cron installer for Twitter/X
-- `scripts/install_damai_cron.sh`: cron installer for Damai
-- `.state/`: local state, ignored by git
+Secrets should be stored in `.env` and referenced from `config.yaml` with `${NAME}`.
 
 ## Development
 
-Run the same basic checks used by CI:
-
 ```bash
+python -m pip install -r requirements-dev.txt
 bash scripts/check.sh
 ```
 
-The project currently uses only the Python standard library, so a virtual environment is optional.
+The check script runs unit tests, compiles Python files, validates shell scripts, and scans for common secret patterns.
 
-## Roadmap
-
-See [ROADMAP.md](ROADMAP.md) for planned work. Contributions are welcome, especially new monitor modules, notification providers, tests, and documentation improvements.
-
-## Safety
+## Safety Rules
 
 Never commit:
 
 - `.env`
+- `config.yaml` with private tokens
 - ServerChan keys, X bearer tokens, webhook URLs, cookies, or browser exports
 - `.state/`
 - local logs or debug JSON files
 
-If a key leaks, rotate it immediately.
+If a secret leaks, rotate it immediately at the provider side.
+
+## Project Boundaries
+
+Signal Watcher only monitors public or user-authorized signals and sends reminders. It should not be used for spam, bypassing access controls, evading platform protections, or automating paid checkout/payment flows.
+
+## Roadmap
+
+See [ROADMAP.md](ROADMAP.md).
 
 ## License
 

@@ -1,10 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$APP_DIR"
+export PYTHONPATH="${PYTHONPATH:-$APP_DIR/src}"
+
 X_INTERVAL_SECONDS="${X_INTERVAL_SECONDS:-30}"
 DAMAI_INTERVAL_SECONDS="${DAMAI_INTERVAL_SECONDS:-15}"
 ENABLE_X_WATCH="${ENABLE_X_WATCH:-1}"
 ENABLE_DAMAI_WATCH="${ENABLE_DAMAI_WATCH:-1}"
+CONFIG_FILE="${CONFIG_FILE:-config.yaml}"
+
+if [[ -f "$CONFIG_FILE" ]]; then
+  exec python3 -m signal_watcher --config "$CONFIG_FILE" --watch
+fi
 
 run_forever() {
   local name="$1"

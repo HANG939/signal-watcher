@@ -1,0 +1,54 @@
+# Copy this file to config.yaml and edit it for your own VPS.
+#
+# Keep secrets in .env and reference them with ${NAME}. Do not commit config.yaml.
+
+state_file: .state/signal-watcher.json
+
+notifiers:
+  # Prints notifications to stdout. Good for testing.
+  - type: print
+
+  # WeChat via ServerChan. Uncomment after SERVERCHAN_SENDKEY is set in .env.
+  # - type: serverchan
+  #   sendkey: ${SERVERCHAN_SENDKEY}
+  #   base_url: https://sctapi.ftqq.com
+
+  # Telegram example.
+  # - type: telegram
+  #   bot_token: ${TELEGRAM_BOT_TOKEN}
+  #   chat_id: ${TELEGRAM_CHAT_ID}
+
+monitors:
+  - name: alpha-cat-x
+    type: x_rss
+    enabled: false
+    username: Alpha_Cat
+    interval_seconds: 30
+    max_posts_per_check: 10
+    feed_urls:
+      - https://xcancel.com/{username}/rss
+      - https://rss.xcancel.com/{username}/rss
+      - https://rsshub.app/twitter/user/{username}
+
+  - name: damai-ticket
+    type: damai
+    enabled: false
+    item_id: "1036125619131"
+    target_text: "580"
+    target_dates:
+      - "2026-07-24"
+      - "2026-07-25"
+      - "2026-07-26"
+    interval_seconds: 15
+    notify_on_change: true
+
+  - name: dmit-stock
+    type: web_keyword
+    enabled: false
+    url: https://www.dmit.io/cart.php
+    title: "DMIT stock signal"
+    message: "The monitored product may be available. Open the page and check manually."
+    interval_seconds: 30
+    notify_on: match
+    absent_all:
+      - Unavailable
