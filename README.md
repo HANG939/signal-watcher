@@ -30,7 +30,7 @@ Damai may hide exact ticket-grade inventory behind app-side flows and anti-bot c
 ## Quick Start
 
 ```bash
-git clone https://github.com/HANG-start/signal-watcher.git
+git clone https://github.com/HANG939/signal-watcher.git
 cd signal-watcher
 cp .env.example .env
 ```
